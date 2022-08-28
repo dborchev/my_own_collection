@@ -1,0 +1,8 @@
+---
+- name: Check my_own_module
+  hosts: localhost
+  tasks:
+    - name: Test
+      my_own_module:
+        path: "/tmp/single_task_test"
+        content: "FooBar"
