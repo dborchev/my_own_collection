@@ -1,1 +1,1 @@
-dborchev/yandex_cloud_elk/README.md
+/home/vagrant/my_own_collection/dborchev/yandex_cloud_elk/README.md
