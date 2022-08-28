@@ -1,0 +1,6 @@
+{
+  "ANSIBLE_MODULE_ARGS": {
+        "path": "/tmp/test_my_own_module",
+        "content": "hello world"
+  }
+}
