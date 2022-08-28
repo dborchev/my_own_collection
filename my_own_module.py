@@ -1,72 +1,57 @@
 #!/usr/bin/python
 
-# Copyright: (c) 2018, Terry Jones <terry.jones@example.org>
-# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+# Copyright: (c) 2022, Denis Borchev <dborchev@example.org>
+# MIT License
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
+import os
+
 
 DOCUMENTATION = r'''
 ---
-module: my_test
+module: my_own_module
 
-short_description: This is my test module
+short_description: Stores content to text file at path on the host
 
 # If this is part of a collection, you need to use semantic versioning,
 # i.e. the version is of the form "2.5.0" and not "2.4".
 version_added: "1.0.0"
 
-description: This is my longer description explaining my test module.
+description: Stores the "content" to a text file at "path" on the host
 
 options:
-    name:
-        description: This is the message to send to the test module.
+    content:
+        description: The content of the target file
         required: true
         type: str
-    new:
-        description:
-            - Control to demo if the result of this module is changed or not.
-            - Parameter description can be a list as well.
-        required: false
-        type: bool
+    path:
+        description: The path to the target file
+        required: true
+        type: str
 # Specify this value according to your collection
 # in format of namespace.collection.doc_fragment_name
 extends_documentation_fragment:
-    - my_namespace.my_collection.my_doc_fragment_name
+    - dborchev.my_collection.my_doc_fragment_name
 
 author:
-    - Your Name (@yourGitHubHandle)
+    - Denis Borchev (@dborchev)
 '''
 
 EXAMPLES = r'''
-# Pass in a message
-- name: Test with a message
-  my_namespace.my_collection.my_test:
-    name: hello world
-
-# pass in a message and have changed true
-- name: Test with a message and changed output
-  my_namespace.my_collection.my_test:
-    name: hello world
-    new: true
-
-# fail the module
-- name: Test failure of the module
-  my_namespace.my_collection.my_test:
-    name: fail me
+# Create a file
+- name: Create file
+  dborchev.my_collection.my_own_module:
+    content: "hello world"
+    path: "/tmp/test_my_own_module"
 '''
 
 RETURN = r'''
 # These are examples of possible return values, and in general should use other names for return values.
-original_message:
-    description: The original name param that was passed in.
-    type: str
+is_ok:
+    description: we are ok
+    type: bool
     returned: always
-    sample: 'hello world'
-message:
-    description: The output message that the test module generates.
-    type: str
-    returned: always
-    sample: 'goodbye'
+    sample: True
 '''
 
 from ansible.module_utils.basic import AnsibleModule
@@ -75,8 +60,8 @@ from ansible.module_utils.basic import AnsibleModule
 def run_module():
     # define available arguments/parameters a user can pass to the module
     module_args = dict(
-        name=dict(type='str', required=True),
-        new=dict(type='bool', required=False, default=False)
+        content=dict(type='str', required=True),
+        path=dict(type='str', required=True)
     )
 
     # seed the result dict in the object
@@ -86,8 +71,7 @@ def run_module():
     # for consumption, for example, in a subsequent task
     result = dict(
         changed=False,
-        original_message='',
-        message=''
+        is_ok=False,
     )
 
     # the AnsibleModule object will be our abstraction working with Ansible
@@ -102,24 +86,20 @@ def run_module():
     # if the user is working with this module in only check mode we do not
     # want to make any changes to the environment, just return the current
     # state with no modifications
+    if not os.path.exists(module.params.get('path')):
+        result['changed'] = True
+    else:
+        # check if the contents of the file are as we expect them:
+        with open(module.params['path'], 'r') as f:
+            data = file.read()
+        result['changed'] = not data == module.params.get('content')
+
     if module.check_mode:
         module.exit_json(**result)
 
-    # manipulate or modify the state as needed (this is going to be the
-    # part where your module will do what it needs to do)
-    result['original_message'] = module.params['name']
-    result['message'] = 'goodbye'
-
-    # use whatever logic you need to determine whether or not this module
-    # made any modifications to your target
-    if module.params['new']:
-        result['changed'] = True
-
-    # during the execution of the module, if there is an exception or a
-    # conditional state that effectively causes a failure, run
-    # AnsibleModule.fail_json() to pass in the message and the result
-    if module.params['name'] == 'fail me':
-        module.fail_json(msg='You requested this to fail', **result)
+    with open(module.params['path'], 'w+') as f:
+        f.write(module.params.get('content'))
+        result['is_ok'] = True
 
     # in the event of a successful module execution, you will want to
     # simple AnsibleModule.exit_json(), passing the key/value results
