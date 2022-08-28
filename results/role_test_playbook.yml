@@ -1,0 +1,11 @@
+---
+  - name: Test playbook for Collection
+    hosts: localhost
+    collections:
+      - dborchev.yandex_cloud_elk
+    roles:
+      - single_task_role
+    vars:
+      - path: "/tmp/role_and_module_test.txt"
+      - content: "Role And Module Test Playbook"
+
